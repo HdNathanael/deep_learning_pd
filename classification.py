@@ -80,7 +80,7 @@ def validate(dataloader, model, loss_fn, device):
     epoch_accuracy = epoch_correct/epoch_total
     return np.mean(epoch_loss), epoch_accuracy
 
-def run_training(n_epochs, model, optimiser, loss_fn, device, train_loader, val_loader=None, verbose=False):
+def run_training(n_epochs, model, optimiser, loss_fn, device, train_loader, val_loader=None, early_stopper=None):
     '''
     Wrapper for training and validation
     :param n_epchos: number of epochs to train
@@ -100,6 +100,9 @@ def run_training(n_epochs, model, optimiser, loss_fn, device, train_loader, val_
     train_acc = []
     val_acc = []
 
+    best_loss = 1e10
+    t = 0
+
     model.to(device)
     for epoch in fastprogress.progress_bar(range(n_epochs)):
         epoch_train_loss, epoch_train_acc = train(train_loader, model, optimiser, loss_fn, device)
@@ -111,6 +114,13 @@ def run_training(n_epochs, model, optimiser, loss_fn, device, train_loader, val_
             val_loss.append(epoch_val_loss)
             val_acc.append(epoch_val_acc)
 
+        if early_stopper:
+            early_stopper.update(epoch_val_loss,epoch_val_acc, model)
+            if early_stopper.early_stop:
+                #early_stopper.load_checkpoint(model)
+                print(f"Patience exhausted. Stopping early...")
+                break
+
     end_time = time.time()
     time_elapsed = np.round(end_time - start_time, 0).astype(int)
     print(f"Finished training after {time_elapsed} seconds")
@@ -118,6 +128,47 @@ def run_training(n_epochs, model, optimiser, loss_fn, device, train_loader, val_
         return train_loss, train_acc, val_loss, val_acc
     else:
         return train_loss, train_acc
+
+
+class EarlyStopper:
+    '''Implements an early stopper, which stops trainings if the validation loss does not increase'''
+
+    def __init__(self, path='checkpoint.pt', patience=10):
+        '''
+
+        :param path: path where the best model is saved, default: checkpoint.pt
+        :param patience: number of epochs to wait before terminating training
+        '''
+        self.patience = patience
+        self.counter = 0
+        self.best_loss = np.Inf
+        self.best_acc = -np.Inf
+        self.__early_stop = False
+        self.path = path
+
+    @property
+    def early_stop(self):
+        return self.counter >= self.patience
+
+    def update(self, val_loss,val_acc, model):
+        if val_loss <= self.best_loss:
+            self.counter = 0
+            self.save_checkpoint(model)
+            self.best_loss = val_loss
+            self.best_acc = val_acc
+        else:
+            self.counter += 1
+
+    def save_checkpoint(self, model):
+        torch.save(model.state_dict(), self.path)
+
+    def load_checkpoint(self, model):
+        print(f'Loading the best model...')
+        print(f'Validation loss {self.best_loss:6f}')
+        print(f'Validation accuracy {self.best_acc:6f}')
+        model.load_state_dict(torch.load(self.path))
+        model.eval()
+
 
 class MLP_cl(nn.Module):
 
@@ -196,11 +247,52 @@ def plot_class_results(train_loss,train_acc,val_loss,val_acc):
     plt.legend()
 
     plt.subplot(122)
-    plt.plot(train_acc,label = "Training Accuracy")
     plt.plot(val_acc,label = "Validation Accuracy")
+    plt.plot(train_acc, label="Training Accuracy")
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy")
     plt.title("Training and Validation accuracy")
     plt.legend()
 
+    plt.show()
+
+
+def plot_class_hyper(train_loss_hyper,train_acc_hyper,val_loss_hyper,val_acc_hyper):
+    plt.figure(figsize = (18,10))
+    plt.subplot(221)
+    for j in range(len(train_loss_hyper)):
+        lab = "hyper comb" + str(j)
+        plt.plot(train_loss_hyper[j],label = lab)
+    plt.ylabel("Loss")
+    plt.xlabel("Epoch")
+    plt.title("Training Loss")
+    plt.legend()
+
+    plt.subplot(222)
+    for j in range(len(val_loss_hyper)):
+        lab = "hyper comb" + str(j)
+        plt.plot(val_loss_hyper[j], label=lab)
+    plt.ylabel("Loss")
+    plt.xlabel("Epoch")
+    plt.title("Validation Loss")
+    plt.legend()
+
+    plt.subplot(223)
+    for j in range(len(train_acc_hyper)):
+        lab = "hyper comb" + str(j)
+        plt.plot(train_acc_hyper[j], label=lab)
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epoch")
+    plt.title("Training Accuracy")
+    plt.legend()
+
+    plt.subplot(224)
+    for j in range(len(val_acc_hyper)):
+        lab = "hyper comb" + str(j)
+        plt.plot(val_acc_hyper[j], label=lab)
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epoch")
+    plt.title("Validation Accuracy")
+    plt.legend()
+    plt.tight_layout()
     plt.show()
