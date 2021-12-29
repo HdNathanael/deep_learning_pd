@@ -10,8 +10,6 @@ import torch.nn.functional as F
 
 from sklearn.model_selection import KFold
 
-def get_accuracy(correct,total):
-    return float(correct/total)
 
 def train(dataloader, model, optimiser, loss_fn, device):
     '''
