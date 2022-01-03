@@ -1,31 +1,5 @@
 import numpy as np
-import copy
-
-import torch
-
-def make_tensor(dat):
-    '''
-  Converts a 2d pandas dataframe to a tuple containing tensor
-  Input: pandas dataframe
-  Output: list containing tensors
-  '''
-    tups = []
-    for jj in range(len(dat)):
-        x = torch.tensor([dat.input.iloc[jj]]).float()
-        y = torch.tensor([dat.label.iloc[jj]]).float()
-        tups.append((x, y))
-    return tups
-
-def normalise(df):
-    df_norm = copy.deepcopy(df)
-    for j in range(len(df.columns)):
-        col = df.iloc[:, j]
-        mean = np.mean(col)
-        sd = np.std(col)
-        for it, x in enumerate(col):
-            df_norm.iloc[it, j] = (x - mean) / sd
-
-    return df_norm
+import matplotlib.pyplot as plt
 
 def plot_cv_results(train_loss, val_loss):
     # calculate average training and validation loss
@@ -85,5 +59,67 @@ def plot_cv_hyper(train_loss, val_loss):
         ax2.set_title("Average Validation loss")
         ax2.legend()
 
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_class_results(train_loss, train_acc, val_loss, val_acc):
+    plt.figure(figsize=(18, 5))
+    plt.subplot(121)
+    plt.semilogy(val_loss, label="Validation loss")
+    plt.semilogy(train_loss, label="Training loss")
+    plt.ylabel("Log Loss")
+    plt.xlabel("Epoch")
+    plt.title("Training and Validation loss")
+    plt.legend()
+
+    plt.subplot(122)
+    plt.plot(val_acc, label="Validation Accuracy")
+    plt.plot(train_acc, label="Training Accuracy")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title("Training and Validation accuracy")
+    plt.legend()
+
+    plt.show()
+
+
+def plot_class_hyper(train_loss_hyper, train_acc_hyper, val_loss_hyper, val_acc_hyper):
+    plt.figure(figsize=(18, 10))
+    plt.subplot(221)
+    for j in range(len(train_loss_hyper)):
+        lab = "hyper comb" + str(j)
+        plt.plot(train_loss_hyper[j], label=lab)
+    plt.ylabel("Loss")
+    plt.xlabel("Epoch")
+    plt.title("Training Loss")
+    plt.legend()
+
+    plt.subplot(222)
+    for j in range(len(val_loss_hyper)):
+        lab = "hyper comb" + str(j)
+        plt.plot(val_loss_hyper[j], label=lab)
+    plt.ylabel("Loss")
+    plt.xlabel("Epoch")
+    plt.title("Validation Loss")
+    plt.legend()
+
+    plt.subplot(223)
+    for j in range(len(train_acc_hyper)):
+        lab = "hyper comb" + str(j)
+        plt.plot(train_acc_hyper[j], label=lab)
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epoch")
+    plt.title("Training Accuracy")
+    plt.legend()
+
+    plt.subplot(224)
+    for j in range(len(val_acc_hyper)):
+        lab = "hyper comb" + str(j)
+        plt.plot(val_acc_hyper[j], label=lab)
+    plt.ylabel("Accuracy")
+    plt.xlabel("Epoch")
+    plt.title("Validation Accuracy")
+    plt.legend()
     plt.tight_layout()
     plt.show()

@@ -1,73 +1,16 @@
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import copy
 import time
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader, TensorDataset
-from torchvision import transforms
+from torch.utils.data import Dataset, DataLoader
 
-import fastprogress # this helps to plot a progress bar
+import fastprogress
+
+import helper
 
 from sklearn.model_selection import KFold
-
-import tqdm
-
-
-class MLP(nn.Module):
-
-    def __init__(self, Ni, No, hidden_layer_params=None, act_fn=None, dropout=0):
-        '''
-
-        :param Ni: Number of input units
-        :param No: Number of output units
-        :param hidden_layer_params: dictionary containing the number of hidden units per hidden layer
-        :param act_fn: Activation function (default is ReLU).
-        '''
-        super().__init__()  # initialise parent class
-
-        if hidden_layer_params is None:
-            n_hidden_layers = 0
-            Nout = No
-        else:
-            n_hidden_layers = len(hidden_layer_params) - 1
-            Nout = hidden_layer_params[0]
-
-        if act_fn is None:
-            act_fn = nn.ReLU
-
-        self.layers = nn.ModuleList()
-        self.layers.append(nn.Linear(in_features=Ni, out_features=Nout))
-        self.layers.append(act_fn())
-
-        # add hidden layers
-        hidden_layers = 0
-        while hidden_layers < n_hidden_layers:
-            Nin = hidden_layer_params[hidden_layers]
-            Nout = hidden_layer_params[hidden_layers + 1]
-            self.layers.append(nn.Linear(in_features=Nin, out_features=Nout))
-            self.layers.append(nn.Dropout(dropout))
-            self.layers.append(act_fn())
-            hidden_layers += 1
-
-        # add output layer
-        self.layers.append(nn.Linear(in_features=Nout, out_features=No))
-
-    def forward(self, x):
-        '''
-        forward pass in the network
-        :param x: input data
-        :return: predicted values given the input data
-        '''
-        x = x.view(x.size(0), -1)
-
-        for layer in self.layers:
-            x = layer(x)
-        return x
-
 
 # define functions to train the MLP
 def train(dataloader, model, optimiser, loss_fn, device, classification = False):
@@ -284,7 +227,7 @@ def k_fold_cv(n_folds, train_df, n_epochs, model, device, init_weights,
     train_loss = np.zeros((n_folds, n_epochs))
     val_loss = np.zeros((n_folds, n_epochs))
 
-    train_tensor = make_tensor(train_df)
+    train_tensor = helper.make_tensor(train_df)
     # iterate over all folds
     for fold, (train_ids, val_ids) in enumerate(kfold.split(train_df)):
         print("")
@@ -319,11 +262,47 @@ def k_fold_cv(n_folds, train_df, n_epochs, model, device, init_weights,
     print("")
     print(f"Completed Cross Validation after {time_elapsed} seconds")
     return train_loss, val_loss
-
-def init_weights_xavier(m):
-    if isinstance(m, nn.Linear):
-        torch.nn.init.xavier_uniform_(m.weight)
-
-def init_weights_kaiming(m):
-    if isinstance(m, nn.Linear):
-        torch.nn.init.kaiming_normal_(m.weight)
+#
+# def tune_params(hyper_params, max_epochs=50):
+#     n_mods = len(hyper_params[0])
+#
+#     train_loss_hyper = np.zeros((n_mods, max_epochs)) * np.nan
+#     train_acc_hyper = np.zeros((n_mods, max_epochs)) * np.nan
+#
+#     val_loss_hyper = np.zeros((n_mods, max_epochs)) * np.nan
+#     val_acc_hyper = np.zeros((n_mods, max_epochs)) * np.nan
+#
+#     for j in tqdm.tqdm(range(n_mods)):
+#         act_fn = nn.ReLU
+#         hidden_layer_params = dict(zip(list(range(hyper[0][j])), nodes[j]))
+#         lr = hyper[1][j]
+#         do_rate = hyper[2][j]
+#         weight_decay = hyper[3][j]
+#         patience = hyper[4][j]
+#         Ni = 28 * 28
+#         No = 10
+#
+#         mlp_hyper = MLP(Ni, No, hidden_layer_params, act_fn, dropout=do_rate)
+#         mlp_hyper.apply(init_weights_kaiming)
+#
+#         loss_fn = nn.CrossEntropyLoss()
+#         optimiser = optim.Adam(mlp_hyper.parameters(), lr=lr, weight_decay=weight_decay)
+#
+#         early_stopper = EarlyStopper(path='checkpoint.pt', patience=patience)
+#         print("")
+#         print(f'evaluate hyper parameter combination {j + 1}')
+#         print(f'model structure: {hidden_layer_params}')
+#         print(
+#             f'learning_rate {lr:4f}, dropout_rate: {do_rate:4f}, weight_decay: {weight_decay:4f},patience = {patience}')
+#
+#         train_loss, train_acc, val_loss, val_acc = run_training(max_epochs, mlp_hyper, optimiser, loss_fn, device,
+#                                                                 train_loader=train_loader, val_loader=val_loader,
+#                                                                 early_stopper=early_stopper)
+#
+#         ep = len(train_loss)
+#         train_loss_hyper[j, :ep] = train_loss
+#         train_acc_hyper[j, :ep] = train_acc
+#         val_loss_hyper[j, :ep] = val_loss
+#         val_acc_hyper[j, :ep] = val_acc
+#
+#     return train_loss_hyper, train_acc_hyper, val_loss_hyper, val_acc_hyper
