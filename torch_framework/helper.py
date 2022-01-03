@@ -3,9 +3,16 @@ import copy
 import torch
 
 def get_n_params(model):
-  total_params = sum(p.numel() for p in mlp_cl.parameters() if p.requires_grad)
-  return total_params
+    total_params = sum(p.numel() for p in mlp_cl.parameters() if p.requires_grad)
+    return total_params
 
+def count_classes(dataset):
+    class_count = np.zeros(10)
+    for y in dataset.targets:
+    lab = y.cpu().numpy()
+    class_count[lab] += 1
+    class_count = class_count/len(dataset)
+    return class_count
 
 def split_data(train_dataset, val_size=0.2):
     idx = list(range(len(train_dataset)))
@@ -63,4 +70,6 @@ def init_weights_xavier(m):
 
 def init_weights_kaiming(m):
     if isinstance(m, nn.Linear):
+        torch.nn.init.kaiming_normal_(m.weight)
+    if isinstance(m, nn.Conv2d):
         torch.nn.init.kaiming_normal_(m.weight)
