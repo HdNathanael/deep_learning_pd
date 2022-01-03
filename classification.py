@@ -6,237 +6,9 @@ import copy
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
-def train(dataloader, model, optimiser, loss_fn, device):
-    '''
-    Trains one epoch of a neural network for regression.
-
-    :param dataloader: dataloader object containing the training data
-    :param model: initialised Torch nn (nn.Module) to train
-    :param optimiser: Torch optimiser object
-    :param loss_fn: Torch loss function
-    :param device: device to use for training
-    :return: mean of epoch loss
-    '''
-    epoch_loss = []
-    epoch_correct = 0
-    epoch_total = 0
-    for x, y in dataloader:
-        # initialise training mode
-        optimiser.zero_grad()
-        model.train()
-        # forward pass
-        if len(x.size()) > 2:
-            x = x.view(-1, x.size()[-1] * x.size()[-2])
-        y_hat = model(x.to(device))
-        # store number of correctly classified images
-        epoch_correct += sum(y.to(device) == y_hat.argmax(dim = 1))
-        epoch_total += len(y)
-
-        # loss
-        loss = loss_fn(y_hat, y.to(device))
-
-        # Backpropagation
-        # model.zero_grad()  # reset gradient
-        loss.backward()
-        # Update weights
-        optimiser.step()
-
-        # store batch loss
-        batch_loss = loss.detach().cpu().numpy()  # move loss back to CPU
-        epoch_loss.append(batch_loss)
-    epoch_accuracy = float(epoch_correct/epoch_total)
-    return np.mean(epoch_loss), epoch_accuracy
-
-def validate(dataloader, model, loss_fn, device):
-    '''
-    Calculates validation error for validation dataset
-
-    :param dataloader: dataloader object containing the validation data
-    :param model: initialised Torch nn (nn.Module) to train
-    :param loss_fn: Torch loss function
-    :param device: device to use for training
-    :return: validation loss for one epoch
-    '''
-
-    epoch_loss = []
-    epoch_correct = 0
-    epoch_total = 0
-    model.eval()  # initialise validation mode
-    with torch.no_grad():  # disable gradient tracking
-        for x, y in dataloader:
-            # forward pass
-            if len(x.size()) > 2:
-                x = x.view(-1, x.size()[-1] * x.size()[-2])
-            y_hat = model(x.to(device))
-            # store number of correctly classified images
-            epoch_correct += sum(y.to(device) == y_hat.argmax(dim=1))
-            epoch_total += len(y)
-            # loss
-            loss = loss_fn(y_hat, y.to(device))
-            batch_loss = loss.detach().cpu().numpy()
-            epoch_loss.append(batch_loss)
-    epoch_accuracy = epoch_correct/epoch_total
-    return np.mean(epoch_loss), epoch_accuracy
-
-def run_training(n_epochs, model, optimiser, loss_fn, device, train_loader, val_loader=None, early_stopper=None):
-    '''
-    Wrapper for training and validation
-    :param n_epchos: number of epochs to train
-    :param model: initialised Torch nn (nn.Module) to train
-    :param optimiser: Torch optimiser object
-    :param train_loader: dataloader object for training data
-    :param val_loader: dataloader object for validation data
-    :param loss_fn: Torch loss function
-    :param device: device to use (CPU, GPU)
-    :param verbose:
-    :return:
-    '''
-    print('Initialising training')
-    start_time = time.time()
-    train_loss = []
-    val_loss = []
-    train_acc = []
-    val_acc = []
-
-    best_loss = 1e10
-    t = 0
-
-    model.to(device)
-    for epoch in fastprogress.progress_bar(range(n_epochs)):
-        epoch_train_loss, epoch_train_acc = train(train_loader, model, optimiser, loss_fn, device)
-        train_loss.append(epoch_train_loss)
-        train_acc.append(epoch_train_acc)
-
-        if val_loader is not None:
-            epoch_val_loss, epoch_val_acc = validate(val_loader, model, loss_fn, device)
-            val_loss.append(epoch_val_loss)
-            val_acc.append(epoch_val_acc)
-
-        if early_stopper:
-            early_stopper.update(epoch_val_loss,epoch_val_acc, model)
-            if early_stopper.early_stop:
-                #early_stopper.load_checkpoint(model)
-                print(f"Patience exhausted. Stopping early...")
-                break
-
-    end_time = time.time()
-    time_elapsed = np.round(end_time - start_time, 0).astype(int)
-    print(f"Finished training after {time_elapsed} seconds")
-    if val_loader is not None:
-        return train_loss, train_acc, val_loss, val_acc
-    else:
-        return train_loss, train_acc
 
 
-class EarlyStopper:
-    '''Implements an early stopper, which stops trainings if the validation loss does not increase'''
-
-    def __init__(self, path='checkpoint.pt', patience=10):
-        '''
-
-        :param path: path where the best model is saved, default: checkpoint.pt
-        :param patience: number of epochs to wait before terminating training
-        '''
-        self.patience = patience
-        self.counter = 0
-        self.best_loss = np.Inf
-        self.best_acc = -np.Inf
-        self.__early_stop = False
-        self.path = path
-
-    @property
-    def early_stop(self):
-        return self.counter >= self.patience
-
-    def update(self, val_loss,val_acc, model):
-        if val_loss <= self.best_loss:
-            self.counter = 0
-            self.save_checkpoint(model)
-            self.best_loss = val_loss
-            self.best_acc = val_acc
-        else:
-            self.counter += 1
-
-    def save_checkpoint(self, model):
-        torch.save(model.state_dict(), self.path)
-
-    def load_checkpoint(self, model):
-        print(f'Loading the best model...')
-        print(f'Validation loss {self.best_loss:6f}')
-        print(f'Validation accuracy {self.best_acc:6f}')
-        model.load_state_dict(torch.load(self.path))
-        model.eval()
-
-
-class MLP_cl(nn.Module):
-
-    def __init__(self, Ni, No, hidden_layer_params=None, act_fn=None, dropout=0):
-        '''
-
-        :param Ni: Number of input units
-        :param No: Number of output units
-        :param hidden_layer_params: dictionary containing the number of hidden units per hidden layer
-        :param act_fn: Activation function (default is ReLU).
-        '''
-        super().__init__()  # initialise parent class
-
-        if hidden_layer_params is None:
-            n_hidden_layers = 0
-            Nout = No
-        else:
-            n_hidden_layers = len(hidden_layer_params) - 1
-            Nout = hidden_layer_params[0]
-
-        if act_fn is None:
-            act_fn = nn.ReLU
-
-        self.layers = nn.ModuleList()
-        self.layers.append(nn.Linear(in_features=Ni, out_features=Nout))
-        self.layers.append(nn.Dropout(dropout))
-        self.layers.append(act_fn())
-
-        # add hidden layers
-        hidden_layers = 0
-        while hidden_layers < n_hidden_layers:
-            Nin = hidden_layer_params[hidden_layers]
-            Nout = hidden_layer_params[hidden_layers + 1]
-            self.layers.append(nn.Linear(in_features=Nin, out_features=Nout))
-            self.layers.append(nn.Dropout(dropout))
-            self.layers.append(act_fn())
-            hidden_layers += 1
-
-        # add output layer
-        self.layers.append(nn.Linear(in_features=Nout, out_features=No))
-
-    def forward(self, x):
-        '''
-        forward pass in the network
-        :param x: input data
-        :return: predicted values given the input data
-        '''
-        for layer in self.layers:
-            x = layer(x)
-        return F.log_softmax(x, dim=1)
-
-def init_weights_kaiming(m):
-    if isinstance(m, nn.Linear):
-        # torch.nn.init.sparse_(m.weight,sparsity = 0.2)
-        torch.nn.init.kaiming_normal_(m.weight)
-
-def normalise(df):
-    df_norm = copy.deepcopy(df)
-    for j in range(len(df.columns)):
-        col = df.iloc[:, j]
-        mean = np.mean(col)
-        sd = np.std(col)
-        for it, x in enumerate(col):
-            df_norm.iloc[it, j] = (x - mean) / sd
-
-    return df_norm
-
-def plot_class_results(train_loss,train_acc,val_loss,val_acc):
+def plot_class_results(train_loss, train_acc, val_loss, val_acc):
     plt.figure(figsize=(18, 5))
     plt.subplot(121)
     plt.semilogy(val_loss, label="Validation loss")
@@ -247,7 +19,7 @@ def plot_class_results(train_loss,train_acc,val_loss,val_acc):
     plt.legend()
 
     plt.subplot(122)
-    plt.plot(val_acc,label = "Validation Accuracy")
+    plt.plot(val_acc, label="Validation Accuracy")
     plt.plot(train_acc, label="Training Accuracy")
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy")
@@ -257,12 +29,12 @@ def plot_class_results(train_loss,train_acc,val_loss,val_acc):
     plt.show()
 
 
-def plot_class_hyper(train_loss_hyper,train_acc_hyper,val_loss_hyper,val_acc_hyper):
-    plt.figure(figsize = (18,10))
+def plot_class_hyper(train_loss_hyper, train_acc_hyper, val_loss_hyper, val_acc_hyper):
+    plt.figure(figsize=(18, 10))
     plt.subplot(221)
     for j in range(len(train_loss_hyper)):
         lab = "hyper comb" + str(j)
-        plt.plot(train_loss_hyper[j],label = lab)
+        plt.plot(train_loss_hyper[j], label=lab)
     plt.ylabel("Loss")
     plt.xlabel("Epoch")
     plt.title("Training Loss")
@@ -296,3 +68,56 @@ def plot_class_hyper(train_loss_hyper,train_acc_hyper,val_loss_hyper,val_acc_hyp
     plt.legend()
     plt.tight_layout()
     plt.show()
+
+
+def tune_params(hyper_params, max_epochs=50):
+    n_mods = len(hyper_params[0])
+
+    train_loss_hyper = np.zeros((n_mods, max_epochs)) * np.nan
+    train_acc_hyper = np.zeros((n_mods, max_epochs)) * np.nan
+
+    val_loss_hyper = np.zeros((n_mods, max_epochs)) * np.nan
+    val_acc_hyper = np.zeros((n_mods, max_epochs)) * np.nan
+
+    for j in tqdm.tqdm(range(n_mods)):
+        act_fn = nn.ReLU
+        hidden_layer_params = dict(zip(list(range(hyper[0][j])), nodes[j]))
+        lr = hyper[1][j]
+        do_rate = hyper[2][j]
+        weight_decay = hyper[3][j]
+        patience = hyper[4][j]
+        Ni = 28 * 28
+        No = 10
+
+        mlp_hyper = MLP(Ni, No, hidden_layer_params, act_fn, dropout=do_rate)
+        mlp_hyper.apply(init_weights_kaiming)
+
+        loss_fn = nn.CrossEntropyLoss()
+        optimiser = optim.Adam(mlp_hyper.parameters(), lr=lr, weight_decay=weight_decay)
+
+        early_stopper = EarlyStopper(path='checkpoint.pt', patience=patience)
+        print("")
+        print(f'evaluate hyper parameter combination {j + 1}')
+        print(f'model structure: {hidden_layer_params}')
+        print(
+            f'learning_rate {lr:4f}, dropout_rate: {do_rate:4f}, weight_decay: {weight_decay:4f},patience = {patience}')
+
+        train_loss, train_acc, val_loss, val_acc = run_training(max_epochs, mlp_hyper, optimiser, loss_fn, device,
+                                                                train_loader=train_loader, val_loader=val_loader,
+                                                                early_stopper=early_stopper)
+
+        ep = len(train_loss)
+        train_loss_hyper[j, :ep] = train_loss
+        train_acc_hyper[j, :ep] = train_acc
+        val_loss_hyper[j, :ep] = val_loss
+        val_acc_hyper[j, :ep] = val_acc
+
+    return train_loss_hyper, train_acc_hyper, val_loss_hyper, val_acc_hyper
+
+
+def get_best_period(val_loss, val_acc):
+    best = (min(val_loss), max(val_acc))
+    best_epochs = (np.argmin(val_loss), np.argmax(val_acc))
+    print(f"The model achieved the lowest validation loss in epoch {best_epochs[0]}: {best[0]:6f}")
+    print(f"The model achieved the highest validation accuracy in epoch {best_epochs[1]}: {best[1]:6f}")
+
