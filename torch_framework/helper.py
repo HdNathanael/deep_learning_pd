@@ -9,8 +9,8 @@ def get_n_params(model):
 def count_classes(dataset):
     class_count = np.zeros(10)
     for y in dataset.targets:
-    lab = y.cpu().numpy()
-    class_count[lab] += 1
+        lab = y.cpu().numpy()
+        class_count[lab] += 1
     class_count = class_count/len(dataset)
     return class_count
 
