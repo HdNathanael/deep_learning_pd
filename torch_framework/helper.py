@@ -6,6 +6,27 @@ def get_n_params(model):
   total_params = sum(p.numel() for p in mlp_cl.parameters() if p.requires_grad)
   return total_params
 
+
+def split_data(train_dataset, val_size=0.2):
+    idx = list(range(len(train_dataset)))
+    np.random.shuffle(idx)
+    split = int(np.floor(val_size * len(train_dataset)))
+    val_idx = idx[:split]
+
+    mask = np.repeat(False, len(train_dataset))
+    for i in val_idx:
+        mask[i] = True
+
+    tr_dataset, val_dataset = copy.deepcopy(train_dataset), copy.deepcopy(train_dataset)
+
+    val_dataset.data = val_dataset.data[mask]
+    val_dataset.targets = val_dataset.targets[mask]
+
+    tr_dataset.data = tr_dataset.data[~mask]
+    tr_dataset.targets = tr_dataset.targets[~mask]
+
+    return tr_dataset, val_dataset
+
 def make_tensor(dat):
     '''
   Converts a 2d pandas dataframe to a tuple containing tensor
