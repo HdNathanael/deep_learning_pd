@@ -126,7 +126,7 @@ def plot_class_hyper(train_loss_hyper, train_acc_hyper, val_loss_hyper, val_acc_
 
 def plot_img_probs(img,target,y_hat,lab_dict):
   plt.subplot(121)
-  plt.imshow(img.view(28,28))
+  plt.imshow(img.view(28,28),cmap="Greys")
   plt.title(lab_dict[int(target)])
   plt.subplot(122)
   labs = list(lab_dict.values())
