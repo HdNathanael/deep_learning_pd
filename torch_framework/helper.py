@@ -3,7 +3,7 @@ import copy
 import torch
 
 def get_n_params(model):
-    total_params = sum(p.numel() for p in mlp_cl.parameters() if p.requires_grad)
+    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return total_params
 
 def count_classes(dataset):
