@@ -39,11 +39,15 @@ def get_confusion(y_true,y_hat):
 
 def get_precision_cl(cm,lab_dict):
   names = list(lab_dict.values())
-  share_correct = np.diag(cm) / np.sum(cm,axis = 1)
-  print("Precision for each class")
-  print("")
-  for lab,share in zip(names,share_correct):
-    print(f"{lab}\t\t{share*100:.2f} %")
-  print("")
+  precision = np.diag(cm) / np.sum(cm,axis = 0)
+  recall = np.diag(cm) / np.sum(cm,axis = 1)
+  support = np.sum(cm,axis = 1,dtype = int)
   acc = np.sum(np.diag(cm)) / np.sum(cm)
-  print(f"Overall accuracy\t{acc*100:.2f} %")
+  print("Classification report\n")
+  print(f"Overall Accuracy\t{acc*100:.2f}%\n")
+  print(f"{'Class':>12}\tPrecision \tRecall \t\tSupport")
+  for lab,prec,rec,sup in zip(names,precision,recall,support):
+    print(f"{lab:>12}\t{prec*100:.2f} % \t{rec*100:.2f} % \t{sup}")
+  print("")
+  print(f"{'Macro Avg':>12}\t{np.mean(precision)*100:.2f} % \t{np.mean(recall)*100:.2f} % \t{np.sum(support)}")
+  print(f"{'Weighted Avg':>12}\t{np.average(precision,weights = support)*100:.2f} % \t{np.average(recall,weights = support)*100:.2f} % \t{np.sum(support)}")
