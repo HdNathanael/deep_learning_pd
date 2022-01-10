@@ -37,7 +37,7 @@ def get_confusion(y_true,y_hat):
     cm[true,pred] += 1
   return cm
 
-def get_precision_cl(cm,lab_dict):
+def get_classification_report(cm,lab_dict):
   names = list(lab_dict.values())
   precision = np.diag(cm) / np.sum(cm,axis = 0)
   recall = np.diag(cm) / np.sum(cm,axis = 1)
