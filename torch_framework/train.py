@@ -9,7 +9,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from sklearn.model_selection import KFold
 
-import aux
+import torch_framework.aux as aux
 
 # define functions to train the MLP
 def train(dataloader, model, optimiser, loss_fn, device, classification = False):
