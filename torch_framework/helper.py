@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 import torch
+import torch.nn as nn
 
 def get_n_params(model):
     total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -64,12 +65,18 @@ def get_best_period(val_loss, val_acc):
     print(f"The model achieved the lowest validation loss in epoch {best_epochs[0]}: {best[0]:6f}")
     print(f"The model achieved the highest validation accuracy in epoch {best_epochs[1]}: {best[1]:6f}")
 
-def init_weights_xavier(m):
+def init_weights_xavier_unif(m):
     if isinstance(m, nn.Linear):
         torch.nn.init.xavier_uniform_(m.weight)
 
-def init_weights_kaiming(m):
+def init_weights_xavier_norm(m):
     if isinstance(m, nn.Linear):
-        torch.nn.init.kaiming_normal_(m.weight)
-    if isinstance(m, nn.Conv2d):
+        torch.nn.init.xavier_normal_(m.weight)
+
+def weight_reset(m):
+    if isinstance(m, nn.Linear):
+        m.reset_parameters()
+
+def init_weights_kaiming(m):
+    if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
         torch.nn.init.kaiming_normal_(m.weight)
