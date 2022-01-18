@@ -3,10 +3,6 @@ import copy
 import torch
 import torch.nn as nn
 
-def addition(a,b):
-    return a+b
-
-
 def get_n_params(model):
     total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return total_params
@@ -40,11 +36,11 @@ def split_data(train_dataset, val_size=0.2):
     return tr_dataset, val_dataset
 
 def make_tensor(dat):
-    '''
-  Converts a 2d pandas dataframe to a tuple containing tensor
-  Input: pandas dataframe
-  Output: list containing tensors
-  '''
+    """
+      Converts a 2d pandas dataframe to a tuple containing tensor
+      Input: pandas dataframe
+      Output: list containing tensors
+    """
     tups = []
     for jj in range(len(dat)):
         x = torch.tensor([dat.input.iloc[jj]]).float()

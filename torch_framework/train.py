@@ -1,16 +1,15 @@
 import numpy as np
 import time
 
+import fastprogress
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
-import fastprogress
+from sklearn.model_selection import KFold
 
 import helper
-
-from sklearn.model_selection import KFold
 
 # define functions to train the MLP
 def train(dataloader, model, optimiser, loss_fn, device, classification = False):
