@@ -9,7 +9,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from sklearn.model_selection import KFold
 
-import helper
+import aux
 
 # define functions to train the MLP
 def train(dataloader, model, optimiser, loss_fn, device, classification = False):
@@ -226,7 +226,7 @@ def k_fold_cv(n_folds, train_df, n_epochs, model, device, init_weights,
     train_loss = np.zeros((n_folds, n_epochs))
     val_loss = np.zeros((n_folds, n_epochs))
 
-    train_tensor = helper.make_tensor(train_df)
+    train_tensor = aux.make_tensor(train_df)
     # iterate over all folds
     for fold, (train_ids, val_ids) in enumerate(kfold.split(train_df)):
         print("")
@@ -242,7 +242,7 @@ def k_fold_cv(n_folds, train_df, n_epochs, model, device, init_weights,
 
         # initialise model
         net = model
-        net.apply(helper.weight_reset)
+        net.apply(aux.weight_reset)
         net.to(device)
 
         # define loss function and optimiser
