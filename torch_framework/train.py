@@ -204,7 +204,7 @@ class EarlyStopper:
         model.eval()
 
 def k_fold_cv(n_folds, train_df, n_epochs, model, device, init_weights,
-              optimiser=optim.Adam, learning_rate=1e-3, batch_size=4):
+              optimiser=optim.Adam, learning_rate=1e-3, batch_size=100):
     '''
     Wrapper for k-fold Cross validation
     :param n_folds: number of folds
@@ -237,8 +237,10 @@ def k_fold_cv(n_folds, train_df, n_epochs, model, device, init_weights,
         val_idx = torch.utils.data.SubsetRandomSampler(val_ids)
 
         # pass indexes to dataloader
-        train_loader = DataLoader(train_tensor, batch_size=batch_size, sampler=train_idx)
-        val_loader = DataLoader(train_tensor, batch_size=batch_size, sampler=val_idx)
+        batch_size_train = len(train_idx)
+        batch_size_val = len(val_idx)
+        train_loader = DataLoader(train_tensor, batch_size=batch_size_train, shuffle = True, sampler=train_idx)
+        val_loader = DataLoader(train_tensor, batch_size=batch_size_val, shuffle = False,sampler=val_idx)
 
         # initialise model
         net = model
