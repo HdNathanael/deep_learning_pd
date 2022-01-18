@@ -8,7 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 
 import fastprogress
 
-from helper import make_tensor
+import helper
 
 from sklearn.model_selection import KFold
 
@@ -227,7 +227,7 @@ def k_fold_cv(n_folds, train_df, n_epochs, model, device, init_weights,
     train_loss = np.zeros((n_folds, n_epochs))
     val_loss = np.zeros((n_folds, n_epochs))
 
-    train_tensor = make_tensor(train_df)
+    train_tensor = helper.make_tensor(train_df)
     # iterate over all folds
     for fold, (train_ids, val_ids) in enumerate(kfold.split(train_df)):
         print("")
