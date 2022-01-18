@@ -239,8 +239,8 @@ def k_fold_cv(n_folds, train_df, n_epochs, model, device, init_weights,
         # pass indexes to dataloader
         batch_size_train = len(train_idx)
         batch_size_val = len(val_idx)
-        train_loader = DataLoader(train_tensor, batch_size=batch_size_train, shuffle = True, sampler=train_idx)
-        val_loader = DataLoader(train_tensor, batch_size=batch_size_val, shuffle = False,sampler=val_idx)
+        train_loader = DataLoader(train_tensor, batch_size=batch_size_train, sampler=train_idx)
+        val_loader = DataLoader(train_tensor, batch_size=batch_size_val, sampler=val_idx)
 
         # initialise model
         net = model
