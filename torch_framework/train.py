@@ -243,7 +243,7 @@ def k_fold_cv(n_folds, train_df, n_epochs, model, device, init_weights,
 
         # initialise model
         net = model
-        net.apply(init_weights)
+        net.apply(helper.weight_reset)
         net.to(device)
 
         # define loss function and optimiser
