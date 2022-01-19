@@ -2,6 +2,15 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+# for the regression task
+def predict_reg(x,model,device):
+  x_in = torch.tensor(x).float().unsqueeze(-1)
+  model.eval()
+  with torch.no_grad():
+    y_hat = model(x_in.to(device)).squeeze().cpu().numpy()
+  return y_hat
+
+
 # for each different type of picture predict classes
 def sample_random_cl(label,dataset):
   mask = (dataset.targets == label).cpu().numpy()

@@ -204,7 +204,7 @@ class EarlyStopper:
         model.eval()
 
 def k_fold_cv(n_folds, train_df, n_epochs, model, device, init_weights,
-              optimiser=optim.Adam, learning_rate=1e-3, batch_size=20, random_state = 1):
+              optimiser=optim.Adam, learning_rate=1e-3, wd = 0, batch_size=20, random_state = 1):
     '''
     Wrapper for k-fold Cross validation
     :param n_folds: number of folds
@@ -250,7 +250,7 @@ def k_fold_cv(n_folds, train_df, n_epochs, model, device, init_weights,
 
         # define loss function and optimiser
         loss_fn = nn.MSELoss()
-        optim = optimiser(net.parameters(), lr=learning_rate)
+        optim = optimiser(net.parameters(), lr=learning_rate, weight_decay=wd)
 
         # run training and validation and store losses
         fold_train_loss, fold_val_loss = run_training_reg(n_epochs, net, optim, loss_fn, device, train_loader, val_loader)
