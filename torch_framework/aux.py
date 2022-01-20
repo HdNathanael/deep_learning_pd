@@ -3,6 +3,12 @@ import copy
 import torch
 import torch.nn as nn
 
+def get_best_mod(val_loss):
+  print(f'Comparing {len(val_loss)} models\n')
+  print("Model\tmin loss\tepoch\tfinal loss")
+  for it, loss in enumerate(val_loss):
+    print(f"Model {it}\t{np.min(loss):.4f}\t{np.argmin(loss)}\t\t{loss[-1]:.4f}")
+
 def get_n_params(model):
     total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return total_params
