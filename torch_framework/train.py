@@ -79,7 +79,7 @@ def validate(dataloader, model, loss_fn, device, classification = False):
             epoch_loss.append(batch_loss)
     if classification:
         epoch_accuracy = epoch_correct / epoch_total
-        return np.mean(epoch_loss), epoch_accuracy
+        return np.mean(epoch_loss), epoch_accuracy.cpu().numpy()
     else:
         return np.mean(epoch_loss)
 
