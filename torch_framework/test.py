@@ -29,7 +29,8 @@ def predict_soft(image,model,device):
 
 def predict_cl(test_loader,model,device):
   y_hat = np.array([],dtype = "int")
-  y_true = np.array([],dtype = "int")
+  y_true = np.array([],dtype = "int")]
+  model.to(device)
   model.eval()
   with torch.no_grad():
     for x,y in test_loader:
@@ -39,24 +40,3 @@ def predict_cl(test_loader,model,device):
       y_true = np.concatenate((y_true,y))
   return y_true, y_hat
 
-def get_confusion(y_true,y_hat):
-  n_labs = len(np.unique(y_true))
-  cm = np.zeros((n_labs,n_labs))
-  for true, pred in zip(y_true,y_hat):
-    cm[true,pred] += 1
-  return cm
-
-def get_classification_report(cm,lab_dict):
-  names = list(lab_dict.values())
-  precision = np.diag(cm) / np.sum(cm,axis = 0)
-  recall = np.diag(cm) / np.sum(cm,axis = 1)
-  support = np.sum(cm,axis = 1,dtype = int)
-  acc = np.sum(np.diag(cm)) / np.sum(cm)
-  print("Classification report\n")
-  print(f"Overall Accuracy\t{acc*100:.2f}%\n")
-  print(f"{'Class':>12}\tPrecision \tRecall \t\tSupport")
-  for lab,prec,rec,sup in zip(names,precision,recall,support):
-    print(f"{lab:>12}\t{prec*100:.2f} % \t{rec*100:.2f} % \t{sup}")
-  print("")
-  print(f"{'Macro Avg':>12}\t{np.mean(precision)*100:.2f} % \t{np.mean(recall)*100:.2f} % \t{np.sum(support)}")
-  print(f"{'Weighted Avg':>12}\t{np.average(precision,weights = support)*100:.2f} % \t{np.average(recall,weights = support)*100:.2f} % \t{np.sum(support)}")

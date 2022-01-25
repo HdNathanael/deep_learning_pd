@@ -22,6 +22,12 @@ def count_classes(dataset):
     return class_count
 
 def split_data(train_dataset, val_size=0.2):
+    '''
+    splits MNIST Fashion training dataset into validation and training set.
+    :param train_dataset: MNIST FASHION dataset
+    :param val_size: size of validation set
+    :return: training and validation set
+    '''
     idx = list(range(len(train_dataset)))
     np.random.shuffle(idx)
     split = int(np.floor(val_size * len(train_dataset)))
@@ -53,17 +59,6 @@ def make_tensor(dat):
         y = torch.tensor([dat.label.iloc[jj]]).float()
         tups.append((x, y))
     return tups
-
-def normalise(df):
-    df_norm = copy.deepcopy(df)
-    for j in range(len(df.columns)):
-        col = df.iloc[:, j]
-        mean = np.mean(col)
-        sd = np.std(col)
-        for it, x in enumerate(col):
-            df_norm.iloc[it, j] = (x - mean) / sd
-
-    return df_norm
 
 def get_best_period(val_loss, val_acc):
     best = (min(val_loss), max(val_acc))

@@ -15,13 +15,13 @@ import torch_framework.aux as aux
 def train(dataloader, model, optimiser, loss_fn, device, classification = False):
     '''
     Trains one epoch of a neural network for clasification.
-
     :param dataloader: dataloader object containing the training data
     :param model: initialised Torch nn (nn.Module) to train
     :param optimiser: Torch optimiser object
     :param loss_fn: Torch loss function
     :param device: device to use for training
-    :return: mean of epoch loss
+    :param classification: Boolean, set true if classification
+    :return: mean of epoch loss, if classification also accuracy
     '''
     epoch_loss = []
     epoch_correct, epoch_total = 0, 0
@@ -59,7 +59,8 @@ def validate(dataloader, model, loss_fn, device, classification = False):
     :param model: initialised Torch nn (nn.Module) to train
     :param loss_fn: Torch loss function
     :param device: device to use for training
-    :return: validation loss for one epoch
+    :param classification: Boolean set true if doing classification
+    :return: validation loss for one epoch, if classification returns acc too
     '''
 
     epoch_loss = []
@@ -90,12 +91,12 @@ def run_training_cl(n_epochs, model, optimiser, loss_fn, device, train_loader,va
     :param n_epchos: number of epochs to train
     :param model: initialised Torch nn (nn.Module) to train
     :param optimiser: Torch optimiser object
-    :param train_loader: dataloader object for training data
-    :param val_loader: dataloader object for validation data
     :param loss_fn: Torch loss function
     :param device: device to use (CPU, GPU)
-    :param verbose:
-    :return:
+    :param train_loader: dataloader object for training data
+    :param val_loader: dataloader object for validation data
+    :param early_stopper: Initialised early stopper obeject
+    :return: training loss accuracy if available also validation loss and acc
     '''
     print('Initialising training')
     start_time = time.time()
@@ -133,14 +134,14 @@ def run_training_cl(n_epochs, model, optimiser, loss_fn, device, train_loader,va
 def run_training_reg(n_epochs, model, optimiser, loss_fn, device, train_loader, val_loader=None):
     '''
     Wrapper for training and validation
-    :param n_epchos: number of epochs to train
+    :param n_epochs: number of epochs to train
     :param model: initialised Torch nn (nn.Module) to train
     :param optimiser: Torch optimiser object
-    :param train_loader: dataloader object for training data
-    :param val_loader: dataloader object for validation data
     :param loss_fn: Torch loss function
     :param device: device to use (CPU, GPU)
-    :return:
+    :param train_loader: dataloader object for training data
+    :param val_loader: dataloader object for validation data
+    :return: train_loss and if available val_loss
     '''
     print('Initialising training')
     start_time = time.time()
@@ -208,14 +209,15 @@ def k_fold_cv(n_folds, train_df, n_epochs, model, device, init_weights,
     '''
     Wrapper for k-fold Cross validation
     :param n_folds: number of folds
-    :param idx: index of data
     :param train_df: Pandas dataframe object containing training data
     :param n_epochs: number of epochs
     :param model: initialised Torch nn (nn.Module) to train
+    :param device: device to use for training
+    :param init_weights: weight initialisation scheme
     :param optimiser: Torch optimiser object
     :param loss_fn: Torch loss function
-    :param device: device to use for training
-    :param verbose:
+    :param learning_rate: learning rate
+    :param wd: penalty term for weight decay
     :param batch_size: batch size when creating dataloader objects
     :return: 2d array, 2d array, list, list
     '''
@@ -264,47 +266,3 @@ def k_fold_cv(n_folds, train_df, n_epochs, model, device, init_weights,
     print("")
     print(f"Completed Cross Validation after {time_elapsed} seconds")
     return train_loss, val_loss
-#
-# def tune_params(hyper_params, max_epochs=50):
-#     n_mods = len(hyper_params[0])
-#
-#     train_loss_hyper = np.zeros((n_mods, max_epochs)) * np.nan
-#     train_acc_hyper = np.zeros((n_mods, max_epochs)) * np.nan
-#
-#     val_loss_hyper = np.zeros((n_mods, max_epochs)) * np.nan
-#     val_acc_hyper = np.zeros((n_mods, max_epochs)) * np.nan
-#
-#     for j in tqdm.tqdm(range(n_mods)):
-#         act_fn = nn.ReLU
-#         hidden_layer_params = dict(zip(list(range(hyper[0][j])), nodes[j]))
-#         lr = hyper[1][j]
-#         do_rate = hyper[2][j]
-#         weight_decay = hyper[3][j]
-#         patience = hyper[4][j]
-#         Ni = 28 * 28
-#         No = 10
-#
-#         mlp_hyper = MLP(Ni, No, hidden_layer_params, act_fn, dropout=do_rate)
-#         mlp_hyper.apply(init_weights_kaiming)
-#
-#         loss_fn = nn.CrossEntropyLoss()
-#         optimiser = optim.Adam(mlp_hyper.parameters(), lr=lr, weight_decay=weight_decay)
-#
-#         early_stopper = EarlyStopper(path='checkpoint.pt', patience=patience)
-#         print("")
-#         print(f'evaluate hyper parameter combination {j + 1}')
-#         print(f'model structure: {hidden_layer_params}')
-#         print(
-#             f'learning_rate {lr:4f}, dropout_rate: {do_rate:4f}, weight_decay: {weight_decay:4f},patience = {patience}')
-#
-#         train_loss, train_acc, val_loss, val_acc = run_training(max_epochs, mlp_hyper, optimiser, loss_fn, device,
-#                                                                 train_loader=train_loader, val_loader=val_loader,
-#                                                                 early_stopper=early_stopper)
-#
-#         ep = len(train_loss)
-#         train_loss_hyper[j, :ep] = train_loss
-#         train_acc_hyper[j, :ep] = train_acc
-#         val_loss_hyper[j, :ep] = val_loss
-#         val_acc_hyper[j, :ep] = val_acc
-#
-#     return train_loss_hyper, train_acc_hyper, val_loss_hyper, val_acc_hyper

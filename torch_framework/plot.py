@@ -124,29 +124,5 @@ def plot_class_hyper(train_loss_hyper, train_acc_hyper, val_loss_hyper, val_acc_
     plt.tight_layout()
     plt.show()
 
-def plot_img_probs(img,target,y_hat,lab_dict):
-  plt.subplot(121)
-  plt.imshow(img.view(28,28),cmap="Greys")
-  plt.title(lab_dict[int(target)])
-  plt.subplot(122)
-  labs = list(lab_dict.values())
-  x = np.arange(len(labs))
-  plt.bar(x = x, height = y_hat[0], width = 0.3)
-  plt.ylim((0,1))
-  plt.xticks(x, labs, rotation = 90)
-  plt.ylabel('predicted probability')
-  plt.tight_layout()
-  plt.show()
 
-def plot_confusion(cm, lab_dict, title='Confusion matrix', cmap=plt.cm.Blues):
-    labs = list(lab_dict.values())
-    plt.figure(figsize = (7,7))
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
-    tick_marks = np.arange(len(labs))
-    plt.xticks(tick_marks, labs, rotation=90)
-    plt.yticks(tick_marks, labs)
-    plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
+
