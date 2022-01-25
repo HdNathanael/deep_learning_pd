@@ -29,7 +29,7 @@ def predict_soft(image,model,device):
 
 def predict_cl(test_loader,model,device):
   y_hat = np.array([],dtype = "int")
-  y_true = np.array([],dtype = "int")]
+  y_true = np.array([],dtype = "int")
   model.to(device)
   model.eval()
   with torch.no_grad():
